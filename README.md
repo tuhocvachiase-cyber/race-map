@@ -2,7 +2,9 @@
 
 Bản đồ các giải chạy road, trail và ba môn tại Việt Nam trong 12 tháng tới.
 
-**Xem:** https://tuhocvachiase-cyber.github.io/race-map/
+**Xem:** https://tuhocvachiase-cyber.github.io/race-map/ · English: https://tuhocvachiase-cyber.github.io/race-map/#en
+
+Trang tự chọn tiếng Anh cho trình duyệt không dùng tiếng Việt; nút **EN / VI** ở góc trên để đổi.
 
 ## Khu vực quản trị (sửa ngay trên trang)
 
@@ -33,7 +35,8 @@ Sửa trên web: mở `races.json` → biểu tượng bút chì → sửa → *
 | `lat` / `lon` | Tọa độ ghim | `10.78`, `106.7` |
 | `status` | `open` đang mở · `closed` hết vé · `tbd` chưa công bố · `est` dự kiến | `"open"` |
 | `link` | Trang đăng ký | `"https://…"` |
-| `note` | Ghi chú ngắn | `"AIMS, hợp săn PR"` |
+| `note` | Ghi chú ngắn (tiếng Việt) | `"AIMS, hợp săn PR"` |
+| `note_en` | Ghi chú tiếng Anh, để trống thì bản tiếng Anh không hiện | `"AIMS-certified, good for a PB"` |
 | `id` | Mã duy nhất, không trùng | `"tcb-hcmc-2026"` |
 
 Giải đã diễn ra tự ẩn khỏi bản đồ. `index.html` cũng chứa một bản dữ liệu dự phòng để trang vẫn chạy khi được dán thẳng vào Google Sites bằng "Mã nhúng".
