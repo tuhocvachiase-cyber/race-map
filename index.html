@@ -183,7 +183,7 @@ function slug(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/gi
 
 const MONTHS=[];for(let i=0;i<13;i++)MONTHS.push(new Date(TODAY.getFullYear(),TODAY.getMonth()+i,1));
 const state={type:"all",dist:"all",region:"all",status:"all",month:null,sel:null,zoom:"all"};
-let canEditPage=false,artifactNS=null;
+let canEditPage=false,artifactNS=null,gh=null;
 
 /* ---------- shell ---------- */
 $("root").innerHTML=`<div class="wrap">
@@ -194,6 +194,7 @@ $("root").innerHTML=`<div class="wrap">
   </div>
   <div class="actions">
     <button type="button" class="btn primary" id="addBtn" hidden>+ Thêm giải</button>
+      <button type="button" class="btn" id="logoutBtn" hidden>Thoát quản trị</button>
     <button type="button" class="btn" id="modeBtn" aria-pressed="false"></button>
   </div>
 </header>
@@ -245,7 +246,8 @@ paintMode();
 function paintMeta(){
   const last=races.map(r=>toD(r.end||r.start)).sort((a,b)=>b-a)[0];
   $("sub").textContent=`Road, trail và các giải khác từ ${fmtD(TODAY)}/${mm(TODAY)}/${TODAY.getFullYear()} tới ${last?mm(last)+"/"+last.getFullYear():"—"}. Bấm cột tháng để lọc, bấm ghim hoặc thẻ để xem chi tiết.`;
-  $("foot").innerHTML=`Dữ liệu cập nhật lần cuối ${esc(DATA.updated||"")}. Trạng thái đăng ký ban đầu theo đối chiếu ngày 11/09/2026 của <a href="https://linh.academy/kien-thuc/giai-chay/giai-chay-bo" target="_blank" rel="noopener">Linh Academy</a> (tổng hợp từ trang chính thức và iRace). Giải ghi "Dự kiến" chưa có thông báo cho mùa tới, tháng được suy từ lịch năm trước. Vị trí ghim gần đúng theo tỉnh/thành. Luôn kiểm tra link chính thức trước khi thanh toán.`;
+  $("foot").innerHTML=`Dữ liệu cập nhật lần cuối ${esc(DATA.updated||"")}. Trạng thái đăng ký ban đầu theo đối chiếu ngày 11/09/2026 của <a href="https://linh.academy/kien-thuc/giai-chay/giai-chay-bo" target="_blank" rel="noopener">Linh Academy</a> (tổng hợp từ trang chính thức và iRace). Giải ghi "Dự kiến" chưa có thông báo cho mùa tới, tháng được suy từ lịch năm trước. Vị trí ghim gần đúng theo tỉnh/thành. Luôn kiểm tra link chính thức trước khi thanh toán.`+(ADMIN_OK&&!gh&&!artifactNS?` · <button type="button" class="edit" id="adminLink">Quản trị</button>`:"");
+  const al=$("adminLink");if(al)al.onclick=openLogin;
 }
 
 /* filters */
@@ -318,7 +320,7 @@ function openEditor(id){
   $("f-type").onchange=e=>{const k=$("f-kind");if(["Road","Trail","Khác",""].includes(k.value))k.value={road:"Road",trail:"Trail",other:"Khác"}[e.target.value]};
   $("edCancel").onclick=closeEditor;
   shade.onclick=e=>{if(e.target===shade)closeEditor()};
-  if(r){$("edDel").onclick=()=>{$("edConfirm").hidden=false;$("edYes").focus()};$("edNo").onclick=()=>{$("edConfirm").hidden=true};$("edYes").onclick=()=>save(races.filter(x=>x.id!==r.id),"Đã xóa")}
+  if(r){$("edDel").onclick=()=>{$("edConfirm").hidden=false;$("edYes").focus()};$("edNo").onclick=()=>{$("edConfirm").hidden=true};$("edYes").onclick=()=>save(races.filter(x=>x.id!==r.id),"Đã xóa","Xóa giải: "+r.name)}
   f.onsubmit=e=>{e.preventDefault();const msg=$("edMsg");msg.className="msg err";
     const name=$("f-name").value.trim(),start=$("f-start").value,end=$("f-end").value,lat=parseFloat($("f-lat").value),lon=parseFloat($("f-lon").value);
     if(!name){msg.textContent="Nhập tên giải.";$("f-name").focus();return}
@@ -328,7 +330,7 @@ function openEditor(id){
     const maxv=$("f-max").value===""?null:+$("f-max").value;
     const rec={id:r?r.id:uniqueId(name,start),name,start,end:end||null,type:$("f-type").value,kind:$("f-kind").value.trim()||"Road",dist:$("f-dist").value.trim(),max:maxv,prov:$("f-prov").value.trim()||"—",region:$("f-region").value,lat,lon,status:$("f-status").value,link:$("f-link").value.trim(),note:$("f-note").value.trim()};
     const next=r?races.map(x=>x.id===r.id?rec:x):races.concat([rec]);
-    save(next,r?"Đã lưu thay đổi":"Đã thêm giải");
+    save(next,r?"Đã lưu thay đổi":"Đã thêm giải",(r?"Sửa giải: ":"Thêm giải: ")+name);
   };
   $("f-name").focus();
 }
@@ -352,22 +354,95 @@ function buildDoc(list){
    +"<"+S+' id="app">'+$("app").textContent+"</"+S+">\n"
    +"</body></html>";
 }
-async function save(list,okText){
-  if(!artifactNS)return;
+async function save(list,okText,label){
   const btns=shade.querySelectorAll("button");btns.forEach(b=>b.disabled=true);
   const sv=$("saving");sv.textContent="Đang lưu…";sv.hidden=false;
+  const fail=t=>{sv.hidden=true;btns.forEach(b=>b.disabled=false);const msg=$("edMsg");if(msg){msg.className="msg err";msg.textContent=t}};
+  if(gh){
+    try{
+      await ghSave(list,label||okText);
+      races=list;paintMeta();render();closeEditor();
+      sv.textContent=okText+" · website cập nhật sau 1–2 phút";setTimeout(()=>{sv.hidden=true},4000);
+    }catch(e){
+      if(e.status===409||e.status===422){await ghLoad().catch(()=>{});render();fail("Dữ liệu vừa được sửa ở nơi khác. Mình đã tải bản mới nhất, bạn đóng form và thao tác lại nhé.")}
+      else if(e.status===401){fail("Token hết hạn hoặc sai. Bấm Thoát quản trị rồi đăng nhập lại.")}
+      else if(e.status===403||e.status===404){fail("Token không có quyền ghi vào repo race-map (cần Contents: Read and write).")}
+      else fail("Chưa lưu được ("+(e.status||e.message||"lỗi mạng")+"). Thử lại sau ít phút.");
+    }
+    return;
+  }
+  if(!artifactNS){fail("Chưa đăng nhập quản trị.");return}
   try{await artifactNS.publish(buildDoc(list));sv.textContent=okText+" · đang tải lại"}
-  catch(e){const code=e&&e.code;sv.hidden=true;btns.forEach(b=>b.disabled=false);const msg=$("edMsg");msg.className="msg err";
-    if(code==="conflict"){msg.textContent="Vừa có người lưu bản khác trước bạn. Trang sẽ tải lại bản mới nhất, bạn nhập lại thay đổi nhé."}
-    else if(code==="not_writer"||code==="not_granted"){msg.textContent="Bạn chỉ có quyền xem trang này nên không lưu được.";canEditPage=false;$("addBtn").hidden=true}
-    else{msg.textContent="Chưa lưu được ("+(code||"lỗi không rõ")+"). Thử lại sau ít phút."}}
+  catch(e){const code=e&&e.code;
+    if(code==="conflict")fail("Vừa có người lưu bản khác trước bạn. Trang sẽ tải lại bản mới nhất, bạn nhập lại thay đổi nhé.");
+    else if(code==="not_writer"||code==="not_granted"){fail("Bạn chỉ có quyền xem trang này nên không lưu được.");canEditPage=false;$("addBtn").hidden=true}
+    else fail("Chưa lưu được ("+(code||"lỗi không rõ")+"). Thử lại sau ít phút.")}
+}
+
+/* ---------- admin on the website: commit races.json through the GitHub API ---------- */
+const GH={owner:"tuhocvachiase-cyber",repo:"race-map",path:"races.json",branch:"main"};
+const GH_KEY="racemap-gh-token";
+const ADMIN_OK=/github\.io$/.test(location.hostname)||/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||location.hash==="#admin";
+const b64dec=c=>new TextDecoder().decode(Uint8Array.from(atob(c.replace(/\s/g,"")),ch=>ch.charCodeAt(0)));
+const b64enc=str=>{const bytes=new TextEncoder().encode(str);let bin="";for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(bin)};
+async function ghApi(method,body){
+  const r=await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}`+(method==="GET"?`?ref=${GH.branch}&t=${Date.now()}`:""),{method,headers:{Authorization:"Bearer "+gh.token,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},body:body?JSON.stringify(body):undefined,cache:"no-store"});
+  if(!r.ok){const e=new Error("HTTP "+r.status);e.status=r.status;throw e}
+  return r.json();
+}
+async function ghLoad(){const j=await ghApi("GET");gh.sha=j.sha;const data=JSON.parse(b64dec(j.content));if(Array.isArray(data.races)){races=data.races;if(data.updated)DATA.updated=data.updated;races.forEach(r=>{if(!r.id)r.id=uniqueId(r.name,r.start)})}}
+function serialize(list,stamp){return '{\n"updated": '+JSON.stringify(stamp)+',\n"races": [\n'+list.map(r=>JSON.stringify(r)).join(",\n")+"\n]}\n"}
+async function ghSave(list,label){
+  const d=new Date();const stamp=fmtD(d)+"/"+mm(d)+"/"+d.getFullYear();
+  const res=await ghApi("PUT",{message:label,content:b64enc(serialize(list,stamp)),sha:gh.sha,branch:GH.branch});
+  gh.sha=res.content.sha;DATA.updated=stamp;
+}
+function adminOn(){canEditPage=true;$("addBtn").hidden=false;$("logoutBtn").hidden=!gh;paintMeta();render()}
+$("logoutBtn").onclick=()=>{try{localStorage.removeItem(GH_KEY)}catch(e){}gh=null;canEditPage=!!artifactNS;$("addBtn").hidden=!canEditPage;$("logoutBtn").hidden=true;paintMeta();render()};
+function openLogin(){
+  shade.innerHTML=`<form class="drawer" id="lgForm" role="dialog" aria-modal="true" aria-labelledby="lgTitle" novalidate>
+  <h2 id="lgTitle">Đăng nhập quản trị</h2>
+  <p class="note" style="margin:0">Trang lưu dữ liệu bằng cách ghi file <b>races.json</b> vào repo GitHub <b>${GH.owner}/${GH.repo}</b>. Bạn cần một token GitHub chỉ có quyền với repo này.</p>
+  <ol class="note" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+    <li>Mở <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--road)">tạo Fine-grained token</a>.</li>
+    <li>Repository access: <b>Only select repositories</b> → chọn <b>${GH.repo}</b>.</li>
+    <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
+    <li>Generate token, chép chuỗi bắt đầu bằng <code>github_pat_</code> dán vào dưới.</li>
+  </ol>
+  <div class="field"><label for="lg-token">Token GitHub</label><input id="lg-token" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></div>
+  <label class="note" style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" id="lg-remember" checked> Ghi nhớ trên trình duyệt này (chỉ dùng trên máy riêng)</label>
+  <div class="msg" id="edMsg" role="status"></div>
+  <div class="dact"><span class="sp"></span><button type="button" class="btn" id="edCancel">Hủy</button><button type="submit" class="btn primary" id="lgGo">Đăng nhập</button></div>
+</form>`;
+  shade.hidden=false;
+  $("edCancel").onclick=closeEditor;shade.onclick=e=>{if(e.target===shade)closeEditor()};
+  $("lgForm").onsubmit=async e=>{e.preventDefault();const t=$("lg-token").value.trim();const msg=$("edMsg");msg.className="msg";
+    if(!t){msg.className="msg err";msg.textContent="Dán token vào ô trên.";return}
+    msg.textContent="Đang kiểm tra…";$("lgGo").disabled=true;
+    const ok=await connectGH(t);
+    if(!ok){$("lgGo").disabled=false;msg.className="msg err";msg.textContent=ghErr;return}
+    if($("lg-remember").checked){try{localStorage.setItem(GH_KEY,t)}catch(e2){}}
+    closeEditor();const sv=$("saving");sv.textContent="Đã vào chế độ quản trị";sv.hidden=false;setTimeout(()=>{sv.hidden=true},2500)};
+  $("lg-token").focus();
+}
+let ghErr="";
+async function connectGH(token){
+  gh={token,sha:null};
+  try{await ghLoad();
+    const r=await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}`,{headers:{Authorization:"Bearer "+token,Accept:"application/vnd.github+json"}});
+    const j=r.ok?await r.json():null;
+    if(j&&j.permissions&&!j.permissions.push){gh=null;ghErr="Token này chỉ đọc được, chưa có quyền ghi (Contents: Read and write).";return false}
+    adminOn();return true}
+  catch(e){gh=null;ghErr=e.status===401?"Token không đúng hoặc đã hết hạn.":e.status===404||e.status===403?"Token không truy cập được repo "+GH.repo+". Kiểm tra lại mục Repository access.":"Không kết nối được GitHub ("+(e.status||"mạng")+").";return false}
 }
 
 /* ---------- boot ---------- */
 races.forEach(r=>{if(!r.id)r.id=uniqueId(r.name,r.start)});
 paintMeta();render();
+if(ADMIN_OK){let t=null;try{t=localStorage.getItem(GH_KEY)}catch(e){}if(t)connectGH(t).then(ok=>{if(!ok){try{localStorage.removeItem(GH_KEY)}catch(e){}}})}
+if(ADMIN_OK&&location.hash==="#admin"&&!gh)setTimeout(()=>{if(!gh)openLogin()},300);
 /* on a normal website: load the latest data from races.json next to the page */
-if(/^https?:$/.test(location.protocol)){fetch("races.json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).then(j=>{if(!j||!Array.isArray(j.races)||!j.races.length)return;races=j.races;if(j.updated)DATA.updated=j.updated;races.forEach(r=>{if(!r.id)r.id=uniqueId(r.name,r.start)});paintMeta();render()}).catch(()=>{})}
+if(/^https?:$/.test(location.protocol)){fetch("races.json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).then(j=>{if(gh||!j||!Array.isArray(j.races)||!j.races.length)return;races=j.races;if(j.updated)DATA.updated=j.updated;races.forEach(r=>{if(!r.id)r.id=uniqueId(r.name,r.start)});paintMeta();render()}).catch(()=>{})}
 (async()=>{try{
   if(!window.claude||!window.claude.use)return;
   const [a,u]=await Promise.all([window.claude.use("artifact"),window.claude.use("user")]);

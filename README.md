@@ -4,7 +4,17 @@ Bản đồ các giải chạy road, trail và ba môn tại Việt Nam trong 12
 
 **Xem:** https://tuhocvachiase-cyber.github.io/race-map/
 
-## Cập nhật giải
+## Khu vực quản trị (sửa ngay trên trang)
+
+1. Tạo token: https://github.com/settings/personal-access-tokens/new
+   - Repository access: **Only select repositories** → `race-map`
+   - Permissions → Repository → **Contents: Read and write**
+2. Mở trang, bấm **Quản trị** ở cuối trang (hoặc vào `.../race-map/#admin`), dán token.
+3. Dùng **+ Thêm giải**, **Sửa**, **Xóa**. Mỗi lần lưu là một commit vào `races.json`; website cập nhật sau 1–2 phút.
+
+Token chỉ lưu trong trình duyệt của bạn (nếu chọn "Ghi nhớ"), không nằm trong code. Không đăng nhập trên máy dùng chung. Bấm **Thoát quản trị** để xóa token khỏi trình duyệt; muốn thu hồi hẳn thì xóa token trong GitHub Settings.
+
+## Cập nhật giải thủ công
 
 Toàn bộ dữ liệu nằm trong `races.json`, mỗi dòng là một giải. Trang web tự đọc file này, nên chỉ cần sửa `races.json` là xong (1–2 phút sau GitHub Pages cập nhật).
 
