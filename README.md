@@ -42,4 +42,4 @@ Giải đã diễn ra tự ẩn khỏi bản đồ. `index.html` cũng chứa m�
 
 **Chèn → Nhúng → Theo URL** → dán `https://tuhocvachiase-cyber.github.io/race-map/`.
 
-Nguồn ban đầu: lịch giải của Linh Academy (đối chiếu 11/09/2026) và trang chính thức từng giải.
+Thông tin tổng hợp từ nhiều nguồn công khai, chỉ mang tính tham khảo; cần tự kiểm chứng tại trang chính thức của từng giải.
