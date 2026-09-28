@@ -41,6 +41,16 @@ Sửa trên web: mở `races.json` → biểu tượng bút chì → sửa → *
 
 Giải đã diễn ra tự ẩn khỏi bản đồ. `index.html` cũng chứa một bản dữ liệu dự phòng để trang vẫn chạy khi được dán thẳng vào Google Sites bằng "Mã nhúng".
 
+## Góp ý của người xem
+
+Trang có nút **Báo sai** trên từng giải, **+ Đề xuất giải** và **Góp ý cho trang**. Góp ý được ghi vào Google Sheet và gửi email báo. Các nút chỉ hiện khi `config.json` có `feedbackUrl`.
+
+Cài đặt một lần: làm theo hướng dẫn ở đầu file `feedback/Code.gs`, rồi dán URL ứng dụng web vào `config.json`:
+
+```json
+{ "feedbackUrl": "https://script.google.com/macros/s/…/exec" }
+```
+
 ## Nhúng vào Google Sites
 
 **Chèn → Nhúng → Theo URL** → dán `https://tuhocvachiase-cyber.github.io/race-map/`.

@@ -79,6 +79,7 @@ svg#map{display:block;width:100%;height:auto;max-height:78vh;touch-action:manipu
 .lhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .lhead h2{font-family:var(--disp);font-size:24px;font-weight:700;margin:0}
 .lhead span{color:var(--muted);font-size:13px}
+.lhead .btn{margin-left:auto}
 .mgroup{font-family:var(--disp);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 2px 0}
 .card{display:grid;grid-template-columns:74px minmax(0,1fr);gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;border-left:4px solid var(--c)}
 .card.sel{box-shadow:0 0 0 2px var(--c)}
@@ -286,7 +287,7 @@ $("root").innerHTML=`<div class="wrap">
     <div class="tip" id="tip" hidden></div>
   </div>
   <section class="list" aria-live="polite">
-    <div class="lhead"><h2 id="lcount"></h2><span id="lsum"></span></div>
+    <div class="lhead"><h2 id="lcount"></h2><span id="lsum"></span><button type="button" class="btn" id="suggestBtn" hidden></button></div>
     <div id="cards"></div>
   </section>
 </main>
@@ -305,8 +306,8 @@ function paintMeta(){
   const a=lang==="en"?TODAY.getDate()+" "+MN[TODAY.getMonth()]+" "+TODAY.getFullYear():`${fmtD(TODAY)}/${mm(TODAY)}/${TODAY.getFullYear()}`;
   const b=last?(lang==="en"?MN[last.getMonth()]+" "+last.getFullYear():mm(last)+"/"+last.getFullYear()):"—";
   $("sub").textContent=t("sub")(a,b);
-  $("foot").innerHTML=t("foot")(esc(DATA.updated||""))+(ADMIN_OK&&!gh&&!artifactNS?`<p style="margin:6px 0 0"><button type="button" class="edit" id="adminLink">${t("admin")}</button></p>`:"");
-  const al=$("adminLink");if(al)al.onclick=openLogin;
+  $("foot").innerHTML=t("foot")(esc(DATA.updated||""))+(FB.url?`<p style="margin:6px 0 0"><button type="button" class="edit" id="fbLink" style="color:var(--road)">${ft("general")}</button></p>`:"")+(ADMIN_OK&&!gh&&!artifactNS?`<p style="margin:6px 0 0"><button type="button" class="edit" id="adminLink">${t("admin")}</button></p>`:"");
+  const al=$("adminLink");if(al)al.onclick=openLogin;const fl=$("fbLink");if(fl)fl.onclick=()=>openFeedback("general");
 }
 
 /* filters */
@@ -340,7 +341,7 @@ function showTip(r,evt){tip.innerHTML=`<b>${esc(r.name)}</b>${esc(dateRange(r))}
 
 function renderPins(list){const g=$("pins");g.innerHTML="";const scale=VB[state.zoom][2]/1300*2;const pts=layout(list,scale);pts.sort((a,b)=>(a.r.id===state.sel)-(b.r.id===state.sel));pts.forEach(p=>{const r=p.r;const gg=el("g",{class:"pin"+(r.status==="est"?" est":""),tabindex:"0",role:"button","aria-label":r.name},g);const mx=+r.max;const rad=(mx>42?9:mx===42?7.5:6)*scale;if(p.x!==p.ox||p.y!==p.oy)el("line",{x1:p.ox,y1:p.oy,x2:p.x,y2:p.y,stroke:"var(--landEdge)","stroke-width":1,"vector-effect":"non-scaling-stroke"},gg);el("circle",{class:"core",cx:p.x,cy:p.y,r:rad,fill:`var(--${r.type})`},gg);if(r.id===state.sel)el("circle",{class:"ring",cx:p.x,cy:p.y,r:rad+5*scale},gg);gg.addEventListener("mousemove",e=>showTip(r,e));gg.addEventListener("mouseleave",()=>tip.hidden=true);gg.addEventListener("click",()=>select(r.id,true));gg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(r.id,true)}})})}
 
-function renderCards(list){const MN=t("MN");const box=$("cards");box.innerHTML="";$("lcount").textContent=t("count")(list.length);$("lsum").textContent=t("sum")(list.filter(r=>r.type==="road").length,list.filter(r=>r.type==="trail").length,list.filter(r=>r.type==="other").length,list.filter(r=>r.status==="open").length);if(!list.length){box.innerHTML=`<div class="empty">${t("empty")}</div>`;return}let lastM=null;list.forEach(r=>{const s=toD(r.start),e=toD(r.end);const k=mKey(s);if(k!==lastM){lastM=k;const h=document.createElement("div");h.className="mgroup";h.textContent=t("group")(lang==="en"?MN[s.getMonth()]:s.getMonth()+1,s.getFullYear());box.appendChild(h)}const c=document.createElement("article");c.className="card"+(r.id===state.sel?" sel":"");c.id="c-"+r.id;c.tabIndex=0;c.style.setProperty("--c",`var(--${r.type})`);const dt=Math.round((s-TODAY)/864e5);const cd=r.status==="est"?t("est"):dt<=0?t("now"):dt===1?t("tomorrow"):t("inDays")(dt);const sk=STATUS_KEYS.includes(r.status)?r.status:"tbd";const note=trNote(r);c.innerHTML=`<div class="date">${r.status==="est"?`<span class="d">${lang==="en"?MN[s.getMonth()]:"T"+(s.getMonth()+1)}</span><span class="m">${s.getFullYear()}</span>`:`<span class="d">${fmtD(s)}${e?"<small>–"+fmtD(e)+"</small>":""}</span><span class="m">${MN[s.getMonth()]} · ${String(s.getFullYear()).slice(2)}</span>`}<span class="cd">${cd}</span></div><div class="info"><h3>${esc(r.name)}</h3><div class="meta"><span>${esc(trProv(r.prov))}</span><span>${t("region")(r.region)}</span><span>${esc(dateRange(r))}</span></div><div class="tags"><span class="tag t">${esc(trKind(r.kind))}</span><span class="tag">${esc(trDist(r.dist))}</span><span class="st ${sk}">${t("st")[sk]}</span><span class="links">${canEditPage?`<button type="button" class="edit" data-edit="${esc(r.id)}">${t("edit")}</button>`:""}${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener">${t("site")}</a>`:""}</span></div>${note?`<div class="note">${esc(note)}</div>`:""}</div>`;c.onclick=ev=>{if(ev.target.closest("a"))return;const ed=ev.target.closest("[data-edit]");if(ed){openEditor(ed.dataset.edit);return}select(r.id,false)};c.onkeydown=ev=>{if(ev.key==="Enter"&&ev.target===c)select(r.id,false)};box.appendChild(c)})}
+function renderCards(list){const MN=t("MN");const box=$("cards");box.innerHTML="";$("lcount").textContent=t("count")(list.length);$("lsum").textContent=t("sum")(list.filter(r=>r.type==="road").length,list.filter(r=>r.type==="trail").length,list.filter(r=>r.type==="other").length,list.filter(r=>r.status==="open").length);if(!list.length){box.innerHTML=`<div class="empty">${t("empty")}</div>`;return}let lastM=null;list.forEach(r=>{const s=toD(r.start),e=toD(r.end);const k=mKey(s);if(k!==lastM){lastM=k;const h=document.createElement("div");h.className="mgroup";h.textContent=t("group")(lang==="en"?MN[s.getMonth()]:s.getMonth()+1,s.getFullYear());box.appendChild(h)}const c=document.createElement("article");c.className="card"+(r.id===state.sel?" sel":"");c.id="c-"+r.id;c.tabIndex=0;c.style.setProperty("--c",`var(--${r.type})`);const dt=Math.round((s-TODAY)/864e5);const cd=r.status==="est"?t("est"):dt<=0?t("now"):dt===1?t("tomorrow"):t("inDays")(dt);const sk=STATUS_KEYS.includes(r.status)?r.status:"tbd";const note=trNote(r);c.innerHTML=`<div class="date">${r.status==="est"?`<span class="d">${lang==="en"?MN[s.getMonth()]:"T"+(s.getMonth()+1)}</span><span class="m">${s.getFullYear()}</span>`:`<span class="d">${fmtD(s)}${e?"<small>–"+fmtD(e)+"</small>":""}</span><span class="m">${MN[s.getMonth()]} · ${String(s.getFullYear()).slice(2)}</span>`}<span class="cd">${cd}</span></div><div class="info"><h3>${esc(r.name)}</h3><div class="meta"><span>${esc(trProv(r.prov))}</span><span>${t("region")(r.region)}</span><span>${esc(dateRange(r))}</span></div><div class="tags"><span class="tag t">${esc(trKind(r.kind))}</span><span class="tag">${esc(trDist(r.dist))}</span><span class="st ${sk}">${t("st")[sk]}</span><span class="links">${canEditPage?`<button type="button" class="edit" data-edit="${esc(r.id)}">${t("edit")}</button>`:""}${FB.url?`<button type="button" class="edit" data-report="${esc(r.id)}">${ft("report")}</button>`:""}${r.link?`<a href="${esc(r.link)}" target="_blank" rel="noopener">${t("site")}</a>`:""}</span></div>${note?`<div class="note">${esc(note)}</div>`:""}</div>`;c.onclick=ev=>{if(ev.target.closest("a"))return;const ed=ev.target.closest("[data-edit]");if(ed){openEditor(ed.dataset.edit);return}const rp=ev.target.closest("[data-report]");if(rp){openFeedback("report",rp.dataset.report);return}select(r.id,false)};c.onkeydown=ev=>{if(ev.key==="Enter"&&ev.target===c)select(r.id,false)};box.appendChild(c)})}
 
 function select(id,fromMap){state.sel=state.sel===id?null:id;render();if(state.sel==null)return;if(fromMap){const c=$("c-"+id);if(c)c.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"})}else if(innerWidth<=860){mapbox.scrollIntoView({behavior:"smooth",block:"start"})}}
 
@@ -353,7 +354,7 @@ function applyLang(){
   document.querySelectorAll("[data-ia]").forEach(e=>{e.setAttribute("aria-label",t(e.dataset.ia))});
   document.querySelectorAll(".chip").forEach(b=>{const k=b.dataset.lk;b.textContent=k[0]==="="?k.slice(1):t(k)});
   const lb=$("langBtn");lb.textContent=t("langBtn");lb.setAttribute("aria-label",t("langAria"));lb.setAttribute("lang",lang==="vi"?"en":"vi");
-  paintMode();paintMapLabels();paintMeta();render();
+  paintMode();paintMapLabels();paintFeedback();paintMeta();render();
 }
 $("langBtn").onclick=()=>{lang=lang==="vi"?"en":"vi";try{localStorage.setItem("racemap-lang",lang)}catch(e){}applyLang()};
 
@@ -510,11 +511,85 @@ async function connectGH(token){
   catch(e){gh=null;ghErr=e.status===401?"Token không đúng hoặc đã hết hạn.":e.status===404||e.status===403?"Token không truy cập được repo "+GH.repo+". Kiểm tra lại mục Repository access.":"Không kết nối được GitHub ("+(e.status||"mạng")+").";return false}
 }
 
+/* ---------- feedback: sends to a Google Apps Script web app (URL in config.json) ---------- */
+const FB={url:""};
+const FBT={
+vi:{report:"Báo sai",suggest:"+ Đề xuất giải",general:"Góp ý cho trang",
+  tReport:"Báo thông tin sai",tSuggest:"Đề xuất giải mới",tGeneral:"Góp ý cho trang",
+  race:"Giải",issue:"Sai ở đâu?",issues:{date:"Sai ngày thi đấu",closed:"Đã hết vé / đóng đăng ký",opened:"Đã mở đăng ký",dist:"Sai cự ly",place:"Sai địa điểm",link:"Link hỏng / sai link",cancel:"Giải bị hủy / hoãn",other:"Khác"},
+  detail:"Thông tin đúng là gì?",detailPh:"VD: BTC đã dời sang 22/11, xem fanpage…",
+  nName:"Tên giải",nDate:"Ngày thi đấu",nDatePh:"VD: 15/03/2027 hoặc tháng 3/2027",nPlace:"Địa điểm",nPlacePh:"Tỉnh/thành, VD: Đà Lạt",nLink:"Link trang giải / đăng ký",nMsg:"Thêm thông tin (cự ly, loại road/trail…)",
+  msg:"Nội dung góp ý",contact:"Liên hệ (không bắt buộc)",contactPh:"Email hoặc Zalo",contactNote:"Chỉ dùng để hỏi lại khi cần, không công khai.",
+  send:"Gửi góp ý",cancel:"Hủy",sending:"Đang gửi…",close:"Đóng",
+  thanks:"Cảm ơn bạn!",thanksBody:"Góp ý đã được gửi. Thông tin sẽ được kiểm tra trước khi cập nhật lên bản đồ.",
+  errReq:"Vui lòng điền các ô bắt buộc.",errRate:"Bạn vừa gửi khá nhiều góp ý. Thử lại sau ít phút nhé.",errNet:"Chưa gửi được. Kiểm tra mạng rồi thử lại."},
+en:{report:"Report error",suggest:"+ Suggest a race",general:"Send feedback",
+  tReport:"Report incorrect info",tSuggest:"Suggest a new race",tGeneral:"Feedback about this page",
+  race:"Race",issue:"What is wrong?",issues:{date:"Wrong race date",closed:"Sold out / registration closed",opened:"Registration now open",dist:"Wrong distances",place:"Wrong location",link:"Broken or wrong link",cancel:"Race cancelled / postponed",other:"Other"},
+  detail:"What is the correct information?",detailPh:"e.g. The organiser moved it to 22 Nov, see their Facebook page…",
+  nName:"Race name",nDate:"Race date",nDatePh:"e.g. 15/03/2027 or March 2027",nPlace:"Location",nPlacePh:"Province or city, e.g. Da Lat",nLink:"Race / registration website",nMsg:"More details (distances, road or trail…)",
+  msg:"Your feedback",contact:"Contact (optional)",contactPh:"Email or phone",contactNote:"Only used to follow up if needed. Never published.",
+  send:"Send",cancel:"Cancel",sending:"Sending…",close:"Close",
+  thanks:"Thank you!",thanksBody:"Your feedback has been sent. It will be checked before the map is updated.",
+  errReq:"Please fill in the required fields.",errRate:"You have sent several messages just now. Please try again in a few minutes.",errNet:"Could not send. Check your connection and try again."}};
+const ft=k=>FBT[lang][k];
+function fbCid(){let c=null;try{c=localStorage.getItem("racemap-cid");if(!c){c=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem("racemap-cid",c)}}catch(e){}return c||"anon"}
+function fbRateOk(){try{const now=Date.now();const a=JSON.parse(localStorage.getItem("racemap-fb")||"[]").filter(x=>now-x<600000);if(a.length>=5)return false;a.push(now);localStorage.setItem("racemap-fb",JSON.stringify(a))}catch(e){}return true}
+function openFeedback(kind,raceId){
+  const r=raceId?races.find(x=>x.id===raceId):null;
+  const req='<span aria-hidden="true" style="color:var(--closed)"> *</span>';
+  let body="";
+  if(kind==="report"){
+    body=`<div class="field full"><label>${ft("race")}</label><div style="font-weight:600">${esc(r?r.name:"")}<div class="note" style="margin:2px 0 0">${esc(r?dateRange(r)+" · "+trProv(r.prov):"")}</div></div></div>
+    <div class="field full"><label for="fb-issue">${ft("issue")}${req}</label><select id="fb-issue">${Object.entries(ft("issues")).map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join("")}</select></div>
+    <div class="field full"><label for="fb-msg">${ft("detail")}</label><textarea id="fb-msg" maxlength="1500" placeholder="${esc(ft("detailPh"))}"></textarea></div>`;
+  }else if(kind==="suggest"){
+    body=`<div class="field full"><label for="fb-name">${ft("nName")}${req}</label><input id="fb-name" maxlength="200"></div>
+    <div class="field"><label for="fb-date">${ft("nDate")}${req}</label><input id="fb-date" maxlength="40" placeholder="${esc(ft("nDatePh"))}"></div>
+    <div class="field"><label for="fb-place">${ft("nPlace")}${req}</label><input id="fb-place" maxlength="200" placeholder="${esc(ft("nPlacePh"))}"></div>
+    <div class="field full"><label for="fb-link">${ft("nLink")}</label><input id="fb-link" type="url" maxlength="500" placeholder="https://"></div>
+    <div class="field full"><label for="fb-msg">${ft("nMsg")}</label><textarea id="fb-msg" maxlength="1500"></textarea></div>`;
+  }else{
+    body=`<div class="field full"><label for="fb-msg">${ft("msg")}${req}</label><textarea id="fb-msg" maxlength="2000" style="min-height:110px"></textarea></div>`;
+  }
+  shade.innerHTML=`<form class="drawer" id="fbForm" role="dialog" aria-modal="true" aria-labelledby="fbTitle" novalidate>
+  <h2 id="fbTitle">${ft(kind==="report"?"tReport":kind==="suggest"?"tSuggest":"tGeneral")}</h2>
+  <div class="fgrid">${body}
+    <div class="field full"><label for="fb-contact">${ft("contact")}</label><input id="fb-contact" maxlength="200" autocomplete="email" placeholder="${esc(ft("contactPh"))}"><small>${ft("contactNote")}</small></div>
+    <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true"><label for="fb-website">Website</label><input id="fb-website" tabindex="-1" autocomplete="off"></div>
+  </div>
+  <div class="msg" id="edMsg" role="status"></div>
+  <div class="dact"><span class="sp"></span><button type="button" class="btn" id="edCancel">${ft("cancel")}</button><button type="submit" class="btn primary" id="fbSend">${ft("send")}</button></div>
+</form>`;
+  shade.hidden=false;
+  $("edCancel").onclick=closeEditor;shade.onclick=e=>{if(e.target===shade)closeEditor()};
+  const v=id=>{const e=$(id);return e?e.value.trim():""};
+  $("fbForm").onsubmit=async e=>{e.preventDefault();const msg=$("edMsg");msg.className="msg err";
+    const data={kind,lang,cid:fbCid(),page:location.href.slice(0,300),website:v("fb-website"),contact:v("fb-contact"),message:v("fb-msg")};
+    if(kind==="report"){Object.assign(data,{raceId:r.id,raceName:r.name,issue:$("fb-issue").value});if(data.issue==="other"&&!data.message){msg.textContent=ft("errReq");$("fb-msg").focus();return}}
+    else if(kind==="suggest"){Object.assign(data,{newName:v("fb-name"),newDate:v("fb-date"),newPlace:v("fb-place"),newLink:v("fb-link")});if(!data.newName||!data.newDate||!data.newPlace){msg.textContent=ft("errReq");return}}
+    else if(!data.message){msg.textContent=ft("errReq");$("fb-msg").focus();return}
+    if(!fbRateOk()){msg.textContent=ft("errRate");return}
+    const btn=$("fbSend");btn.disabled=true;btn.textContent=ft("sending");msg.className="msg";msg.textContent="";
+    try{
+      const res=await fetch(FB.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
+      const j=await res.json().catch(()=>({ok:res.ok}));
+      if(!j.ok)throw new Error(j.error||"fail");
+      $("fbForm").innerHTML=`<h2>${ft("thanks")}</h2><p style="margin:0">${ft("thanksBody")}</p><div class="dact"><span class="sp"></span><button type="button" class="btn primary" id="edCancel">${ft("close")}</button></div>`;
+      $("edCancel").onclick=closeEditor;$("edCancel").focus();
+    }catch(err){btn.disabled=false;btn.textContent=ft("send");msg.className="msg err";msg.textContent=String(err&&err.message)==="rate"?ft("errRate"):ft("errNet")}
+  };
+  const first=shade.querySelector("select,input:not(#fb-website),textarea");if(first)first.focus();
+}
+function paintFeedback(){const b=$("suggestBtn");if(b){b.hidden=!FB.url;b.textContent=ft("suggest")}}
+
+$("suggestBtn").onclick=()=>openFeedback("suggest");
 /* ---------- boot ---------- */
 races.forEach(r=>{if(!r.id)r.id=uniqueId(r.name,r.start)});
 applyLang();
 if(ADMIN_OK){let t=null;try{t=localStorage.getItem(GH_KEY)}catch(e){}if(t)connectGH(t).then(ok=>{if(!ok){try{localStorage.removeItem(GH_KEY)}catch(e){}}})}
 if(ADMIN_OK&&location.hash==="#admin"&&!gh)setTimeout(()=>{if(!gh)openLogin()},300);
+if(/^https?:$/.test(location.protocol)){fetch("config.json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).then(c=>{if(c&&/^https:\/\/script\.google\.com\//.test(c.feedbackUrl||"")){FB.url=c.feedbackUrl;paintFeedback();paintMeta();render()}}).catch(()=>{})}
 /* on a normal website: load the latest data from races.json next to the page */
 if(/^https?:$/.test(location.protocol)){fetch("races.json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).then(j=>{if(gh||!j||!Array.isArray(j.races)||!j.races.length)return;races=j.races;if(j.updated)DATA.updated=j.updated;races.forEach(r=>{if(!r.id)r.id=uniqueId(r.name,r.start)});paintMeta();render()}).catch(()=>{})}
 (async()=>{try{
