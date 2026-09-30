@@ -34,6 +34,7 @@ Sửa trên web: mở `races.json` → biểu tượng bút chì → sửa → *
 | `region` | `bac`, `trung`, `nam` | `"nam"` |
 | `lat` / `lon` | Tọa độ ghim | `10.78`, `106.7` |
 | `status` | `open` đang mở · `closed` hết vé · `tbd` chưa công bố · `est` dự kiến | `"open"` |
+| `org` | Đơn vị tổ chức (bấm trên trang để lọc các giải cùng BTC) | `"VietRace365"` |
 | `link` | Trang đăng ký | `"https://…"` |
 | `note` | Ghi chú ngắn (tiếng Việt) | `"AIMS, hợp săn PR"` |
 | `note_en` | Ghi chú tiếng Anh, để trống thì bản tiếng Anh không hiện | `"AIMS-certified, good for a PB"` |

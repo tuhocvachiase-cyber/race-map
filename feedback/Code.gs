@@ -26,7 +26,7 @@ const MAX_TOTAL_PER_HOUR = 40;    // toàn trang, giữ trong hạn mức gửi 
 const KIND_VI = { report: 'Báo sai', suggest: 'Đề xuất giải', general: 'Góp ý chung' };
 const ISSUE_VI = {
   date: 'Sai ngày thi đấu', closed: 'Đã hết vé / đóng đăng ký', opened: 'Đã mở đăng ký',
-  dist: 'Sai cự ly', place: 'Sai địa điểm', link: 'Link hỏng / sai link',
+  dist: 'Sai cự ly', place: 'Sai địa điểm', link: 'Link hỏng / sai link', org: 'Sai đơn vị tổ chức',
   cancel: 'Giải bị hủy / hoãn', other: 'Khác'
 };
 
