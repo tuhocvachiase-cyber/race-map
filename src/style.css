@@ -145,3 +145,5 @@ footer a{color:var(--road)}
 .mbar.pastm .stack{opacity:.45}
 .mbar.pastm .lb{font-style:italic}
 .mbar.nowm .lb{color:var(--ink);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+
+.byline{max-width:1240px;margin:8px auto 0;color:var(--muted);font-size:12px;font-family:var(--disp);letter-spacing:.08em;text-transform:uppercase}
