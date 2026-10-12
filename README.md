@@ -26,7 +26,7 @@ Sửa trên web: mở `races.json` → biểu tượng bút chì → sửa → *
 |---|---|---|
 | `name` | Tên giải | `"Techcombank HCMC International Marathon"` |
 | `start` / `end` | Ngày bắt đầu / kết thúc (YYYY-MM-DD), `end` để `null` nếu chạy 1 ngày | `"2026-12-06"` |
-| `type` | Màu ghim: `road`, `trail`, `other` | `"road"` |
+| `type` | Màu ghim: `road`, `trail`, `other` (băng đồng, Ironman, fun run) | `"road"` |
 | `kind` | Nhãn hiển thị | `"Road (đêm)"` |
 | `dist` | Các cự ly | `"5–42K"` |
 | `max` | Cự ly dài nhất (km), dùng cho bộ lọc; `null` nếu chưa rõ | `42` |
@@ -35,7 +35,8 @@ Sửa trên web: mở `races.json` → biểu tượng bút chì → sửa → *
 | `lat` / `lon` | Tọa độ ghim | `10.78`, `106.7` |
 | `status` | `open` đang mở · `closed` hết vé · `tbd` chưa công bố · `est` dự kiến | `"open"` |
 | `org` | Đơn vị tổ chức (bấm trên trang để lọc các giải cùng BTC) | `"VietRace365"` |
-| `link` | Trang đăng ký | `"https://…"` |
+| `link` | Trang đăng ký chính thức | `"https://…"` |
+| `fb` | Fanpage chính thức (chỉ dán trang đã kiểm chứng) | `"https://www.facebook.com/…"` |
 | `note` | Ghi chú ngắn (tiếng Việt) | `"AIMS, hợp săn PR"` |
 | `note_en` | Ghi chú tiếng Anh, để trống thì bản tiếng Anh không hiện | `"AIMS-certified, good for a PB"` |
 | `id` | Mã duy nhất, không trùng | `"tcb-hcmc-2026"` |
