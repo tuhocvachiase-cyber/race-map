@@ -39,6 +39,7 @@ Sửa trên web: mở `races.json` → biểu tượng bút chì → sửa → *
 | `fb` | Fanpage chính thức (chỉ dán trang đã kiểm chứng) | `"https://www.facebook.com/…"` |
 | `note` | Ghi chú ngắn (tiếng Việt) | `"AIMS, hợp săn PR"` |
 | `note_en` | Ghi chú tiếng Anh, để trống thì bản tiếng Anh không hiện | `"AIMS-certified, good for a PB"` |
+| `last` | Lần tổ chức gần nhất: `y` năm, `n` số VĐV, `q` `"+"` (hơn) / `"~"` (gần) / `""`, `src` link nguồn, `w` danh sách `[cự ly, nhất nam, thời gian, nhất nữ, thời gian]` | `{"y":2025,"n":11000,"q":"+","w":[["42K","Huỳnh Anh Khôi","2:25:15","Phạm Thị Hồng Lệ","2:53:57"]]}` |
 | `id` | Mã duy nhất, không trùng | `"tcb-hcmc-2026"` |
 
 Giải đã diễn ra tự ẩn khỏi bản đồ. `index.html` cũng chứa một bản dữ liệu dự phòng để trang vẫn chạy khi được dán thẳng vào Google Sites bằng "Mã nhúng".
