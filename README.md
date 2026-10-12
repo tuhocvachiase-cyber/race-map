@@ -59,3 +59,16 @@ Cài đặt một lần: làm theo hướng dẫn ở đầu file `feedback/Code
 **Chèn → Nhúng → Theo URL** → dán `https://tuhocvachiase-cyber.github.io/race-map/`.
 
 Thông tin tổng hợp từ nhiều nguồn công khai, chỉ mang tính tham khảo; cần tự kiểm chứng tại trang chính thức của từng giải.
+
+## Phạm vi hiển thị
+
+Trang tự tính theo ngày hiện tại: hiện các giải từ **1 tháng trước** (đánh dấu "Đã diễn ra", xếp cuối danh sách) đến **13 tháng tới**. Không cần sửa code khi sang tháng mới.
+
+## Cập nhật tự động hằng tuần
+
+Một tác vụ Claude theo lịch chạy **sáng thứ Hai hằng tuần**: tra cứu giải mới, đổi ngày, trạng thái đăng ký, link/fanpage chính thức, kết quả các giải vừa diễn ra; sửa `races.json`, chạy `node build.js` rồi commit lên nhánh `main`. Mỗi commit tự động có tiêu đề "Cập nhật tự động …" để dễ xem lại hoặc hoàn tác.
+
+## Mã nguồn
+
+- `src/app.js`, `src/style.css`, `src/vn-path.txt`: mã nguồn giao diện và đường viền bản đồ.
+- `build.js`: ghép mã nguồn + `races.json` thành `index.html` (`node build.js`).
