@@ -43,7 +43,7 @@ vi:{
   all:"Tất cả",other:"Khác",allRegion:"Cả nước",bac:"Bắc",trung:"Trung",nam:"Nam",
   cOpen:"Đang mở",cClosed:"Hết vé",cTbd:"Chưa công bố",cEst:"Dự kiến",
   months:"Lọc theo tháng",mAll:"Đang xem: tất cả các tháng · cột màu = số giải theo loại",mOne:(m,y)=>`Đang xem: tháng ${m}/${y}`,mShowAll:"Xem tất cả tháng",mAria:(l,n)=>`${l}: ${n} giải`,
-  mapAria:"Bản đồ Việt Nam với vị trí các giải chạy",zoomAria:"Phóng to theo vùng",rsTitle:"Số giải theo năm",rsUnit:n=>n+" giải",rsEst:n=>`gồm ${n} dự kiến`,rsDone:n=>`${n} đã diễn ra`,rsNote:"Trong khoảng hiển thị của bản đồ",zAll:"Toàn quốc",zBac:"Miền Bắc",zTrung:"Miền Trung",zNam:"Miền Nam",
+  mapAria:"Bản đồ Việt Nam với vị trí các giải chạy",zoomAria:"Phóng to theo vùng",rsTitle:(a,b)=>`12 tháng: ${a} – ${b}`,rsUnit:n=>n+" giải",rsEst:n=>`gồm ${n} dự kiến`,rsDone:n=>`${n} đã diễn ra`,zAll:"Toàn quốc",zBac:"Miền Bắc",zTrung:"Miền Trung",zNam:"Miền Nam",
   count:n=>n+" giải",sum:(a,b,c,d,e)=>`${a} road · ${b} trail · ${c} khác · ${d} đang mở đăng ký`+(e?` · ${e} đã diễn ra`:""),
   empty:"Không có giải nào khớp bộ lọc. Thử bỏ bớt điều kiện hoặc chọn tháng khác.",
   group:(m,y)=>`Tháng ${m} · ${y}`,est:"dự kiến",now:"đang diễn ra",tomorrow:"ngày mai",inDays:n=>`còn ${n} ngày`,
@@ -64,7 +64,7 @@ en:{
   all:"All",other:"Other",allRegion:"All Vietnam",bac:"North",trung:"Central",nam:"South",
   cOpen:"Open",cClosed:"Sold out",cTbd:"Not announced",cEst:"Expected",
   months:"Filter by month",mAll:"Showing: all months · bar colours = races by type",mOne:(m,y)=>`Showing: ${m} ${y}`,mShowAll:"Show all months",mAria:(l,n)=>`${l}: ${n} races`,
-  mapAria:"Map of Vietnam showing race locations",zoomAria:"Zoom to region",rsTitle:"Races per year",rsUnit:n=>n+(n===1?" race":" races"),rsEst:n=>`incl. ${n} expected`,rsDone:n=>`${n} finished`,rsNote:"Within the period shown on the map",zAll:"All Vietnam",zBac:"North",zTrung:"Central",zNam:"South",
+  mapAria:"Map of Vietnam showing race locations",zoomAria:"Zoom to region",rsTitle:(a,b)=>`12 months: ${a} – ${b}`,rsUnit:n=>n+(n===1?" race":" races"),rsEst:n=>`incl. ${n} expected`,rsDone:n=>`${n} finished`,zAll:"All Vietnam",zBac:"North",zTrung:"Central",zNam:"South",
   count:n=>n+(n===1?" race":" races"),sum:(a,b,c,d,e)=>`${a} road · ${b} trail · ${c} other · ${d} open for registration`+(e?` · ${e} finished`:""),
   empty:"No races match these filters. Try removing a filter or picking another month.",
   group:(m,y)=>`${m} ${y}`,est:"expected",now:"happening now",tomorrow:"tomorrow",inDays:n=>`in ${n} days`,
@@ -223,11 +223,18 @@ function select(id,fromMap){state.sel=state.sel===id?null:id;render();if(state.s
 
 function paintOrg(){const g=$("fOrg");g.hidden=!state.org;if(state.org){const c=$("orgChip");c.textContent=state.org+"  ✕";c.setAttribute("aria-label",t("clear")+": "+state.org)}}
 function setOrg(o){state.org=state.org===o?null:o;state.month=null;render();const top=$("fOrg");if(state.org&&top)top.scrollIntoView({behavior:"smooth",block:"center"})}
-function paintRegionStats(){const box=$("rstats");const z=state.zoom;const title=t({all:"zAll",bac:"zBac",trung:"zTrung",nam:"zNam"}[z]);
-  const rs=races.filter(r=>visible(r)&&(z==="all"||r.region===z));const years=[...new Set(rs.map(r=>toD(r.start).getFullYear()))].sort();
-  const mx=Math.max(1,...years.map(y=>rs.filter(r=>toD(r.start).getFullYear()===y).length));
-  box.innerHTML=`<div class="rs-h"><b>${esc(title)}</b><span>${t("rsTitle")}</span></div>`+years.map(y=>{const a=rs.filter(r=>toD(r.start).getFullYear()===y);const c=k=>a.filter(r=>r.type===k).length;const est=a.filter(r=>r.status==="est").length;const done=a.filter(isPast).length;const w=k=>(c(k)/mx*100).toFixed(1)+"%";
-    return `<div class="rs-row"><span class="rs-y">${y}</span><span class="rs-bar"><i style="width:${w("road")};background:var(--road)"></i><i style="width:${w("trail")};background:var(--trail)"></i><i style="width:${w("other")};background:var(--other)"></i></span><span class="rs-n">${t("rsUnit")(a.length)}</span></div><div class="rs-sub">${c("road")} road · ${c("trail")} trail · ${c("other")} ${t("other").toLowerCase()}${est?" · "+t("rsEst")(est):""}${done?" · "+t("rsDone")(done):""}</div>`}).join("")+`<div class="rs-note">${t("rsNote")}</div>`}
+function paintRegionStats(){const box=$("rstats");const z=state.zoom;const MN=t("MN");
+  const s0=new Date(TODAY.getFullYear(),TODAY.getMonth(),1),s1=new Date(TODAY.getFullYear(),TODAY.getMonth()+12,1);
+  const lbl=d=>lang==="en"?MN[d.getMonth()]+" "+d.getFullYear():(d.getMonth()+1)+"/"+d.getFullYear();
+  const e1=new Date(s1.getFullYear(),s1.getMonth()-1,1);
+  const inWin=r=>{const d=toD(r.start);return d>=s0&&d<s1};
+  const all=races.filter(inWin);
+  const rows=z==="all"?[["bac",t("zBac")],["trung",t("zTrung")],["nam",t("zNam")]]:[[z,t({bac:"zBac",trung:"zTrung",nam:"zNam"}[z])]];
+  const mx=Math.max(1,...rows.map(([k])=>all.filter(r=>r.region===k).length));
+  const row=(name,a,big)=>{const c=k=>a.filter(r=>r.type===k).length;const est=a.filter(r=>r.status==="est").length;const done=a.filter(isPast).length;const w=k=>(c(k)/mx*100).toFixed(1)+"%";
+    return `<div class="rs-row${big?" big":""}"><span class="rs-y">${esc(name)}</span><span class="rs-bar"><i style="width:${w("road")};background:var(--road)"></i><i style="width:${w("trail")};background:var(--trail)"></i><i style="width:${w("other")};background:var(--other)"></i></span><span class="rs-n">${t("rsUnit")(a.length)}</span></div><div class="rs-sub">${c("road")} road · ${c("trail")} trail · ${c("other")} ${t("other").toLowerCase()}${est?" · "+t("rsEst")(est):""}${done?" · "+t("rsDone")(done):""}</div>`};
+  const tot=z==="all"?all:all.filter(r=>r.region===z);
+  box.innerHTML=`<div class="rs-h"><b>${z==="all"?esc(t("zAll")):esc(rows[0][1])}: ${t("rsUnit")(tot.length)}</b><span>${t("rsTitle")(lbl(s0),lbl(e1))}</span></div>`+(z==="all"?rows.map(([k,n])=>row(n,all.filter(r=>r.region===k))).join(""):row(rows[0][1],tot,true))}
 function render(){paintOrg();paintRegionStats();const list=filtered();if(state.sel!=null&&!list.some(r=>r.id===state.sel))state.sel=null;renderMonths();renderPins(list);renderCards(list)}
 
 function applyLang(){
